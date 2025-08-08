@@ -5,7 +5,9 @@ import "tailwindcss";
 import Background from "./Component/Background";
 import Landing from "./Pages/Landing";
 import Header from "./Component/Header";
-import Room from "./Pages/Room";
+
+import SenderRoom from "./Pages/SenderRoom";
+import ReceiverRoom from "./Pages/ReceiverRoom";
 
 function App() {
   return (
@@ -15,7 +17,8 @@ function App() {
         <Header />
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/id/:id" element={<Room/>}/>
+          <Route path="/sender/:id" element={<SenderRoom/>}/>
+          <Route path="/receiver/:id" element={<ReceiverRoom/>}/>
         </Routes>
         </Background>
       </BrowserRouter>
