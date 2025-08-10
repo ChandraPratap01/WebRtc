@@ -3,61 +3,94 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ws_1 = require("ws");
 const wss = new ws_1.WebSocketServer({ port: 3000 });
 const Rooms = {};
-console.log(Rooms);
-wss.on('connection', function connection(ws) {
-    ws.on('error', console.error);
-    console.log("New client connected with ID:");
-    ws.on('message', function message(data) {
-        const { type, id, sdp } = JSON.parse(data);
+wss.on("connection", function connection(ws) {
+    ws.on("error", console.error);
+    ws.on("message", function message(data) {
+        const event = JSON.parse(data);
+        const { host, type, id, sdp, candidate } = JSON.parse(data);
+        console.log(event);
         switch (type) {
-            case ("Join"):
-                if (!Rooms[id]) {
-                    Rooms[id] = { websockets: [] };
+            case "Join":
+                console.log(!Rooms.id);
+                console.log(host === "Sender");
+                if (!Rooms.id && host === "Sender") {
+                    Rooms.id = { websockets: [] };
+                    Rooms.id.websockets.push(ws);
+                    console.log("Sender Joined Room");
                 }
-                if (Rooms[id].websockets.length >= 2) {
-                    ws.send(JSON.stringify({ type: "Rooms Already Full" }));
+                else if (Rooms.id && host === "Receiver") {
+                    if (Rooms.id.websockets.length >= 2) {
+                        ws.send(JSON.stringify({ type: "Rooms Already Full" }));
+                        console.log("Room Full");
+                        return;
+                    }
+                    Rooms.id.websockets.push(ws);
+                }
+                else {
                     return;
                 }
-                Rooms[id].websockets.push(ws);
-                console.log("Joinned ROOm");
                 ws.roomId = id;
-                if (Rooms[id].websockets.length == 2) {
-                    Rooms[id].websockets.forEach(client => {
+                console.log("New client connected with ID:", ws.roomId);
+                console.log(Rooms.id);
+                console.log(Rooms.id.websockets.length == 2);
+                if (Rooms.id && Rooms.id.websockets.length == 2) {
+                    Rooms.id.websockets.forEach((client) => {
+                        console.log("Ready to both send");
                         client.send(JSON.stringify({ type: "Ready" }));
                     });
                 }
                 break;
-            case ("Offer"):
-                if (Rooms[id].websockets) {
-                    Rooms[id].websockets.forEach(client => {
+            case "Offer":
+                console.log(Rooms.id);
+                console.log(Rooms.id.websockets);
+                if (Rooms.id && Rooms.id.websockets) {
+                    console.log("inside Offer Block");
+                    Rooms.id.websockets.forEach((client) => {
+                        console.log("more inside Offer Block");
+                        console.log(client.readyState);
+                        console.log(ws !== client);
                         if (ws !== client && client.readyState === ws_1.WebSocket.OPEN) {
-                            client.send(JSON.stringify({ type: "Offer", sdp }));
+                            console.log(ws !== client);
+                            client.send(JSON.stringify({ type: "Offer", sdp: sdp }));
                         }
                     });
-                    break;
                 }
-            case ("Answer"):
-                if (Rooms[id].websockets) {
-                    Rooms[id].websockets.forEach(client => {
+                break;
+            case "Answer":
+                if (Rooms.id && Rooms.id.websockets) {
+                    Rooms.id.websockets.forEach((client) => {
                         if (ws !== client && client.readyState === ws_1.WebSocket.OPEN) {
-                            client.send(JSON.stringify({ type: "Answer", sdp }));
+                            client.send(JSON.stringify({ type: "Answer", sdp: sdp }));
+                        }
+                    });
+                }
+                break;
+            case "Ice_candidate":
+                if (Rooms.id && Rooms.id.websockets) {
+                    console.log("inside Ice candidate");
+                    Rooms.id.websockets.forEach((client) => {
+                        console.log(client.readyState === ws_1.WebSocket.OPEN);
+                        console.log(ws !== client);
+                        if (ws !== client && client.readyState === ws_1.WebSocket.OPEN) {
+                            console.log("Incecandidaatea Send");
+                            client.send(JSON.stringify({ type: "Ice_candidate", candidate: candidate }));
                         }
                     });
                 }
                 break;
         }
     });
-    ws.on('close', () => {
+    ws.on("close", () => {
         const ID = ws.roomId;
-        if (ID && Rooms[ID].websockets) {
-            Rooms[ID].websockets = Rooms[ID].websockets.filter(x => x !== ws);
-            Rooms[ID].websockets.forEach((client) => {
+        if (ID && Rooms.id.websockets) {
+            Rooms.id.websockets = Rooms.id.websockets.filter((x) => x !== ws);
+            Rooms.id.websockets.forEach((client) => {
                 if (client.readyState === ws_1.WebSocket.OPEN) {
                     client.send(JSON.stringify({ type: "peer-disconnected" }));
                 }
             });
-            if (Rooms[ID].websockets.length == 0) {
-                delete (Rooms[ID]);
+            if (Rooms.id.websockets.length == 0) {
+                delete Rooms.id;
                 console.log("Room Deleted");
             }
         }

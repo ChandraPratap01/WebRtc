@@ -1,8 +1,8 @@
-import { Socket } from "dgram";
+
 import { WebSocketServer, WebSocket } from "ws";
 const wss = new WebSocketServer({ port: 3000 });
 interface room {
-  websockets: WebSocket[];
+  websockets: WebSocket[] ;
 }
 interface CustomWebSocket extends WebSocket {
   roomId?: string;
@@ -11,51 +11,78 @@ interface CustomWebSocket extends WebSocket {
 const Rooms: { [id: string]: room } = {};
 wss.on("connection", function connection(ws: CustomWebSocket) {
   ws.on("error", console.error);
-  console.log("New client connected with ID:");
+  
   ws.on("message", function message(data: any) {
-    const { type, id, sdp } = JSON.parse(data);
+     const event= JSON.parse(data);
+    const { host,type, id, sdp,candidate} = JSON.parse(data);
+   console.log(event);
     switch (type) {
       case "Join":
-        if (!Rooms[id]) {
-          Rooms[id] = { websockets: [] };
+        console.log(!Rooms.id);
+        console.log(host==="Sender");
+        if (!Rooms.id && host==="Sender") {
+          Rooms.id = { websockets: [] };
+           Rooms.id.websockets.push(ws);
+            console.log("Sender Joined Room");
+            
         }
-        if (Rooms[id].websockets.length >= 2) {
-          ws.send(JSON.stringify({ type: "Rooms Already Full" }));
-
+        else if(Rooms.id && host==="Receiver"){
+           if ( Rooms.id.websockets.length >= 2) {
+           ws.send(JSON.stringify({ type: "Rooms Already Full" }));
+          console.log("Room Full")
           return;
         }
-        Rooms[id].websockets.push(ws);
-        console.log("Joinned ROOm");
+          Rooms.id.websockets.push(ws);
+        }else{
+          return;
+        }
         ws.roomId = id;
-        if (Rooms[id].websockets.length == 2) {
-          Rooms[id].websockets.forEach((client) => {
+        console.log("New client connected with ID:",ws.roomId);
+        console.log(Rooms.id);
+        console.log(Rooms.id.websockets.length == 2);
+
+        if (Rooms.id && Rooms.id.websockets.length == 2) {
+          Rooms.id.websockets.forEach((client) => {
+            console.log("Ready to both send");
             client.send(JSON.stringify({ type: "Ready" }));
           });
         }
         break;
       case "Offer":
-        if (Rooms[id].websockets) {
-          Rooms[id].websockets.forEach((client) => {
+        console.log(Rooms.id);
+        console.log( Rooms.id.websockets);
+        if (Rooms.id && Rooms.id.websockets) {
+          console.log("inside Offer Block")
+          Rooms.id.websockets.forEach((client) => {
+             console.log("more inside Offer Block")
+            console.log(client.readyState);
+            console.log(ws !== client)
             if (ws !== client && client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ type: "Offer", sdp }));
+              console.log(ws !== client)
+              client.send(JSON.stringify({ type: "Offer", sdp:sdp }));
             }
           });
         }
         break;
       case "Answer":
-        if (Rooms[id].websockets) {
-          Rooms[id].websockets.forEach((client) => {
+        if (Rooms.id && Rooms.id.websockets) {
+          Rooms.id.websockets.forEach((client) => {
             if (ws !== client && client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ type: "Answer", sdp }));
+              client.send(JSON.stringify({ type: "Answer", sdp:sdp }));
             }
           });
         }
         break;
         case "Ice_candidate":
-            if(Rooms[id].websockets){
-                Rooms[id].websockets.forEach((client)=>{
+            if(Rooms.id && Rooms.id.websockets){
+              console.log("inside Ice candidate");
+               Rooms.id.websockets.forEach((client)=>{
+                console.log(client.readyState===WebSocket.OPEN);
+                console.log(ws!==client);
                     if(ws!==client && client.readyState===WebSocket.OPEN){
-                        client.send(JSON.stringify({type:"Ice_candidate",candidate:data.candidate}))
+                      console.log("Incecandidaatea Send")
+                        client.send(JSON.stringify({type:"Ice_candidate",candidate:candidate}))
+                        
                     }
                 })
             }
@@ -64,15 +91,15 @@ wss.on("connection", function connection(ws: CustomWebSocket) {
   });
   ws.on("close", () => {
     const ID = ws.roomId;
-    if (ID && Rooms[ID].websockets) {
-      Rooms[ID].websockets = Rooms[ID].websockets.filter((x) => x !== ws);
-      Rooms[ID].websockets.forEach((client) => {
+    if (ID && Rooms.id.websockets) {
+      Rooms.id.websockets = Rooms.id.websockets.filter((x) => x !== ws);
+      Rooms.id.websockets.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify({ type: "peer-disconnected" }));
         }
       });
-      if (Rooms[ID].websockets.length == 0) {
-        delete Rooms[ID];
+      if (Rooms.id.websockets.length == 0) {
+        delete Rooms.id;
         console.log("Room Deleted");
       }
     }

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 const ReceiverRoom = () => {
   const { id } = useParams();
-  const [peer, Setpeer] = useState<RTCPeerConnection | null>(null);
-  const videoref = useRef<HTMLVideoElement | null>(null);
+
+  const IncomingRef = useRef<HTMLVideoElement | null>(null);
+  const ReceiverRef = useRef<HTMLVideoElement | null>(null);
   const Media = new MediaStream();
   useEffect(() => {
     const wss = new WebSocket(`ws://localhost:3000`);
@@ -14,18 +15,18 @@ const ReceiverRoom = () => {
     };
     wss.onopen = () => {
       alert(`Connected to the room ${id}`);
-      wss.send(JSON.stringify({ type: "Join", id: id }));
+      wss.send(JSON.stringify({ host:"Receiver",type: "Join", id: id }));
     };
     const pc = new RTCPeerConnection();
-    Setpeer(pc);
+    
     console.log(pc);
 
     pc.ontrack = (event) => {
       console.log("Track Received");
       console.log(event);
       Media.addTrack(event.track);
-      if (videoref.current) {
-        videoref.current.srcObject = Media;
+      if (IncomingRef.current) {
+        IncomingRef.current.srcObject = Media;
       }
     };
 
@@ -34,6 +35,20 @@ const ReceiverRoom = () => {
         const data = await JSON.parse(event.data);
         if (data.type === "Offer") {
           console.log("Offer Received");
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+    console.log(stream.getTracks());
+    if (ReceiverRef.current) {
+      ReceiverRef.current.srcObject = stream;
+    }
+    stream.getTracks().forEach((event) => {
+      pc?.addTrack(event, stream);
+    });
+    console.log(data.sdp)
+    console.log("Offer received and checking whether setRemmote is null or not")
           pc?.setRemoteDescription(data.sdp);
           const answer = await pc?.createAnswer();
           console.log(answer); // create SDP;
@@ -47,7 +62,7 @@ const ReceiverRoom = () => {
           console.log("Ice_candidate Received");
           console.log(data.candidate);
           pc.addIceCandidate(data.candidate);
-        }
+        } 
       };
     }
     console.log("above Ice candidate");
@@ -62,22 +77,28 @@ const ReceiverRoom = () => {
         );
       }
     };
+    
   }, [id]);
 
-  //  const Receive_call=()=>{
-
-  //  }
   return (
-    <div>
-      <div className=" relative ml-10 mr-39 w-250 h-170 flex justify-center items-center  max-a-lg  rounded-lg overflow-hidden p-4 mb-1">
+    <div >
+      <div className="bg-neutral-200 fixed ml-10 mr-39 w-250 h-170 flex justify-center items-center  max-a-lg  rounded-lg overflow-hidden p-1 ">
         <video
           className=" w-full h-full object-cover"
-          ref={videoref}
+          ref={IncomingRef}
           autoPlay
           playsInline
         ></video>
       </div>
-      <div></div>
+      <div className=" absolute bg-neutral-200 ml-260 mt-90 flex flex-row-reverse  h-90  rounded-lg  w-100 ">
+        <video
+          className="  object-cover pt-0"
+          ref={ReceiverRef}
+          autoPlay
+          playsInline
+          
+        ></video>
+      </div>
     </div>
   );
 };
