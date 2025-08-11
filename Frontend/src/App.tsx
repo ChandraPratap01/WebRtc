@@ -8,6 +8,7 @@ import Header from "./Component/Header";
 
 import SenderRoom from "./Pages/SenderRoom";
 import ReceiverRoom from "./Pages/ReceiverRoom";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <BrowserRouter>
         <Background>
         <Header />
+        <Toaster/>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/sender/:id" element={<SenderRoom/>}/>

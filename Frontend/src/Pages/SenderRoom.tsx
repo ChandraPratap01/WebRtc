@@ -1,6 +1,7 @@
 //Sender Logic
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { useParams } from "react-router-dom";
 
 const SenderRoom = () => {
@@ -18,7 +19,6 @@ const SenderRoom = () => {
     };
     
     wss.onopen = () => {
-      alert(`Connected to the room ${id}`);
       wss.send(JSON.stringify({ host:"Sender",type: "Join", id: id }));
       
     };
@@ -83,10 +83,14 @@ if(wss){
     else if(data.type==="Ice_candidate"){
       pc.addIceCandidate(data.candidate)
     }
-    else if (data.type == "Ready") {
-          console.log("Ready Received");
+    else if (data.type ==="Ready") {
+          toast.success('Peer Connected!')
           StartCalling();
         }
+
+    else if(data.type==="Sender Joined"){
+        toast.success('Room Created Successfully!')
+    }
   }}
   const setupStream=async()=>{
    const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
@@ -111,6 +115,7 @@ streamRef.current.getTracks().forEach((event)=>{
 return (
 
  <div >
+
       <div className="bg-neutral-200 fixed ml-10 mr-39 w-250 h-170 flex justify-center items-center  max-a-lg  rounded-lg overflow-hidden p-1 ">
         <video
           className=" w-full h-full object-cover"

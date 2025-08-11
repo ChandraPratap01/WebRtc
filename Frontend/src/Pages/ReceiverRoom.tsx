@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { useParams } from "react-router-dom";
 
 const ReceiverRoom = () => {
@@ -14,7 +15,6 @@ const ReceiverRoom = () => {
       return;
     };
     wss.onopen = () => {
-      alert(`Connected to the room ${id}`);
       wss.send(JSON.stringify({ host:"Receiver",type: "Join", id: id }));
     };
     const pc = new RTCPeerConnection();
@@ -63,6 +63,12 @@ const ReceiverRoom = () => {
           console.log(data.candidate);
           pc.addIceCandidate(data.candidate);
         } 
+        else if(data.type==="First Create Room"){
+          toast.error("Room Doesn't Exist");
+        }
+        else if(data.type==="Ready"){
+          toast.success('Peer Connected!')
+        }
       };
     }
     console.log("above Ice candidate");

@@ -16,17 +16,20 @@ wss.on("connection", function connection(ws) {
                 if (!Rooms.id && host === "Sender") {
                     Rooms.id = { websockets: [] };
                     Rooms.id.websockets.push(ws);
+                    ws.send(JSON.stringify({ type: "Sender Joined" }));
                     console.log("Sender Joined Room");
                 }
                 else if (Rooms.id && host === "Receiver") {
                     if (Rooms.id.websockets.length >= 2) {
-                        ws.send(JSON.stringify({ type: "Rooms Already Full" }));
+                        ws.send(JSON.stringify({ type: "User Exceed" }));
                         console.log("Room Full");
                         return;
                     }
                     Rooms.id.websockets.push(ws);
+                    ws.send(JSON.stringify({ type: "Receiver Joined" }));
                 }
                 else {
+                    ws.send(JSON.stringify({ type: "First Create Room" }));
                     return;
                 }
                 ws.roomId = id;
