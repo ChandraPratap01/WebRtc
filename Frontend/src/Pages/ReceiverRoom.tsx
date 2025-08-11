@@ -11,19 +11,16 @@ const ReceiverRoom = () => {
   useEffect(() => {
     const wss = new WebSocket(`ws://localhost:3000`);
     wss.onerror = (err) => {
-      console.log(err);
+      console.error(err);
+      // Roasater
       return;
     };
     wss.onopen = () => {
-      wss.send(JSON.stringify({ host:"Receiver",type: "Join", id: id }));
+      wss.send(JSON.stringify({ host: "Receiver", type: "Join", id: id }));
     };
     const pc = new RTCPeerConnection();
-    
-    console.log(pc);
 
     pc.ontrack = (event) => {
-      console.log("Track Received");
-      console.log(event);
       Media.addTrack(event.track);
       if (IncomingRef.current) {
         IncomingRef.current.srcObject = Media;
@@ -34,60 +31,47 @@ const ReceiverRoom = () => {
       wss.onmessage = async (event) => {
         const data = await JSON.parse(event.data);
         if (data.type === "Offer") {
-          console.log("Offer Received");
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-    console.log(stream.getTracks());
-    if (ReceiverRef.current) {
-      ReceiverRef.current.srcObject = stream;
-    }
-    stream.getTracks().forEach((event) => {
-      pc?.addTrack(event, stream);
-    });
-    console.log(data.sdp)
-    console.log("Offer received and checking whether setRemmote is null or not")
+          if (ReceiverRef.current) {
+            ReceiverRef.current.srcObject = stream;
+          }
+          stream.getTracks().forEach((event) => {
+            pc?.addTrack(event, stream);
+          });
+
           pc?.setRemoteDescription(data.sdp);
-          const answer = await pc?.createAnswer();
-          console.log(answer); // create SDP;
+          const answer = await pc?.createAnswer(); // create SDP;
+
           await pc?.setLocalDescription(answer);
-          console.log("setlocal description worked");
-          console.log(pc.localDescription);
+
           wss.send(
             JSON.stringify({ type: "Answer", sdp: pc.localDescription })
           );
         } else if (data.type === "Ice_candidate") {
-          console.log("Ice_candidate Received");
-          console.log(data.candidate);
           pc.addIceCandidate(data.candidate);
-        } 
-        else if(data.type==="First Create Room"){
+        } else if (data.type === "First Create Room") {
           toast.error("Room Doesn't Exist");
-        }
-        else if(data.type==="Ready"){
-          toast.success('Peer Connected!')
+        } else if (data.type === "Ready") {
+          toast.success("Peer Connected!");
         }
       };
     }
-    console.log("above Ice candidate");
+
     pc.onicecandidate = (event) => {
-      console.log("BElow iscecandidate");
-      console.log(event);
-      console.log(wss.readyState === wss.OPEN);
       if (event.candidate && wss.readyState === wss.OPEN) {
-        console.log(event.candidate);
         wss.send(
           JSON.stringify({ type: "Ice_candidate", candidate: event.candidate })
         );
       }
     };
-    
   }, [id]);
 
   return (
-    <div >
+    <div>
       <div className="bg-neutral-200 fixed ml-10 mr-39 w-250 h-170 flex justify-center items-center  max-a-lg  rounded-lg overflow-hidden p-1 ">
         <video
           className=" w-full h-full object-cover"
@@ -102,7 +86,6 @@ const ReceiverRoom = () => {
           ref={ReceiverRef}
           autoPlay
           playsInline
-          
         ></video>
       </div>
     </div>

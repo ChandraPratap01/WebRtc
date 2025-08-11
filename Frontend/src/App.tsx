@@ -15,13 +15,13 @@ function App() {
     <>
       <BrowserRouter>
         <Background>
-        <Header />
-        <Toaster/>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/sender/:id" element={<SenderRoom/>}/>
-          <Route path="/receiver/:id" element={<ReceiverRoom/>}/>
-        </Routes>
+          <Header />
+          <Toaster />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/sender/:id" element={<SenderRoom />} />
+            <Route path="/receiver/:id" element={<ReceiverRoom />} />
+          </Routes>
         </Background>
       </BrowserRouter>
     </>
