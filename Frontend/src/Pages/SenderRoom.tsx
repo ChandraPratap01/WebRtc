@@ -15,8 +15,8 @@ const SenderRoom = () => {
   useEffect(() => {
     const wss = new WebSocket(`ws://localhost:3000`);
     wss.onerror = (err) => {
+      toast.error("Not Connected to Server");
       return console.error(err);
-      //Roasater
     };
 
     wss.onopen = () => {
@@ -45,7 +45,8 @@ const SenderRoom = () => {
           wss.send(JSON.stringify({ type: "Offer", sdp: pc.localDescription }));
         }
       } catch (err) {
-        console.log("Negotiation error ", err); //Roaster
+        toast.error("Negotiation error");
+        return console.log("Negotiation error ", err);
       }
     };
 
@@ -62,26 +63,38 @@ const SenderRoom = () => {
     // Handiling response from other end;
 
     if (wss) {
-      wss.onmessage = async (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === "Answer") {
-          await pc.setRemoteDescription(data.sdp);
-        }
-        // Accepting Ice_candidate;
-        else if (data.type === "Ice_candidate") {
-          pc.addIceCandidate(data.candidate);
-        } else if (data.type === "Ready") {
-          toast.success("Peer Connected!");
-          StartCalling();
-        } else if (data.type === "Sender Joined") {
-          toast.success("Room Created Successfully!");
-        }
-      };
+      const peerConnectionPromise:Promise<string>=new Promise((resolve, rejects) => {
+        wss.onmessage = async (event) => {
+          const data = JSON.parse(event.data);
+          if (data.type === "Answer") {
+            await pc.setRemoteDescription(data.sdp);
+          }
+          // Accepting Ice_candidate;
+          else if (data.type === "Ice_candidate") {
+            pc.addIceCandidate(data.candidate);
+          } else if (data.type === "Ready") {
+            resolve("Peer Connected!");
+            StartCalling();
+          } else if (data.type === "Sender Joined") {
+            toast.success("Room Created Successfully!");
+          } else {
+            rejects(new Error("Could not connect to peer"));
+          }
+        };
+        setTimeout(() => {
+          rejects(new Error("Timeout waiting for peer"));
+        }, 60000);
+      });
+      toast.promise(peerConnectionPromise, {
+          loading: "Waiting For Peer...",
+          success:(msg)=> <b>{msg}</b>,
+          error:(err)=> <b>{err.message}</b>,
+        });
     }
     const setupStream = async () => {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: false,
+        audio: true,
       });
       streamRef.current = stream;
       if (SenderRef.current) {

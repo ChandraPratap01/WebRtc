@@ -11,8 +11,8 @@ const ReceiverRoom = () => {
   useEffect(() => {
     const wss = new WebSocket(`ws://localhost:3000`);
     wss.onerror = (err) => {
+      toast.error("Not Connected to Server")
       console.error(err);
-      // Roasater
       return;
     };
     wss.onopen = () => {
