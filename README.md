@@ -72,5 +72,5 @@ Visit [http://localhost:5173/](http://localhost:5173/) in your browser to use th
 
 ## 🤝 Author
 
-Made with ❤️ by **Chandra**
+Made with ❤️ 
 
