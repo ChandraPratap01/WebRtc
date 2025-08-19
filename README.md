@@ -1,4 +1,4 @@
-![WebRTC Flow]((https://github.com/ChandraPratap01/WebRtc/blob/main/asset/Screenshot%202025-08-19%20at%202.23.07%E2%80%AFPM.png))
+![WebRTC Flow](https://github.com/ChandraPratap01/WebRtc/blob/main/asset/Screenshot%202025-08-19%20at%202.23.07%E2%80%AFPM.png)
 
 # WebRTC P2P Communication
 
